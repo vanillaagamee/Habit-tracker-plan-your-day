@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Planner & Habit Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFF7F0;
+    --card:#FFFFFF;
+    --accent:#FF7A59;
+    --muted:#FFDEC8;
+    --text:#3A3A3A;
+    --success:#2BB673;
+    --danger:#FF4D6D;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+    background:linear-gradient(180deg,var(--bg),#FFF);
+    color:var(--text);
+    padding:24px;
+    display:flex;
+    justify-content:center;
+  }
+  .app{width:100%;max-width:1100px;margin:16px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#FFB286);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-family:"Fredoka One",cursive;box-shadow:0 6px 18px rgba(255,122,89,0.18)}
+  h1{margin:0;font-size:20px}
+  p.lead{margin:0;color:#6b6b6b;font-size:13px}
+  .controls{display:flex;gap:8px;align-items:center}
+  .btn{background:var(--accent);color:white;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(255,122,89,0.15)}
+  main{display:grid;grid-template-columns:360px 1fr;gap:18px}
+  .sidebar{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 6px 16px rgba(20,20,20,0.04)}
+  .section-title{font-size:13px;margin:0 0 8px 0;color:#5b5b5b}
+  .view-tabs{display:flex;gap:8px;margin-bottom:12px}
+  .tab{padding:8px 10px;border-radius:10px;background:var(--muted);cursor:pointer;font-weight:600}
+  .tab.active{background:var(--accent);color:white}
+  .new-form{display:flex;flex-direction:column;gap:8px}
+  input, select, textarea{padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)}
+  textarea{resize:vertical;min-height:64px}
+  .small{font-size:13px;color:#666}
+  .habit-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .habit{padding:10px;border-radius:10px;background:linear-gradient(180deg,#fff,#fff);display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(0,0,0,0.04)}
+  .freq{font-size:12px;color:#777}
+  .board{display:flex;flex-direction:column;gap:14px}
+  .panel{background:var(--card);border-radius:14px;padding:14px;box-shadow:0 6px 16px rgba(20,20,20,0.04)}
+  .day-grid{display:flex;gap:12px;flex-wrap:wrap}
+  .task{border-radius:10px;padding:10px;background:linear-gradient(90deg,rgba(255,255,255,0.9),#fff);display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid rgba(0,0,0,0.03);min-width:220px}
+  .meta{font-size:12px;color:#666}
+  .chip{padding:6px 8px;border-radius:8px;background:var(--muted);font-weight:600}
+  .footer{margin-top:18px;display:flex;justify-content:space-between;align-items:center;color:#666;font-size:13px}
+  @media(max-width:900px){main{grid-template-columns:1fr;padding-bottom:60px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">PT</div>
+      <div>
+        <h1>Planner & Habit Tracker</h1>
+        <p class="lead">Organize harian, mingguan, bulanan & planning time</p>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn" onclick="exportData()">Export</button>
+      <button class="btn ghost" onclick="importData()">Import</button>
+      <button class="btn" onclick="clearAll()">Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <aside class="sidebar panel">
+      <p class="section-title">Tambahkan Task / Goal</p>
+      <div class="new-form">
+        <input id="title" placeholder="Judul (mis. Olahraga)" />
+        <textarea id="note" placeholder="Catatan (opsional)"></textarea>
+        <div style="display:flex;gap:8px">
+          <select id="recurrence">
+            <option value="daily">Harian</option>
+            <option value="weekly">Mingguan</option>
+            <option value="monthly">Bulanan</option>
+            <option value="once">Sekali (Tanggal tertentu)</option>
+          </select>
+          <input id="date" type="date" style="flex:1" />
+        </div>
+        <div style="display:flex;gap:8px">
+          <input id="startTime" type="time" />
+          <input id="endTime" type="time" />
+        </div>
+        <div style="display:flex;gap:8px">
+          <select id="category">
+            <option value="task">Task</option>
+            <option value="habit">Habit</option>
+            <option value="goal">Goal</option>
+          </select>
+          <button class="btn" onclick="addItem()">Tambah</button>
+        </div>
+        <p class="small">Pilih "Sekali" dan tanggal jika ingin menetapkan tanggal tertentu</p>
+      </div>
+
+      <hr style="border:none;height:10px">
+
+      <p class="section-title">Filter & Views</p>
+      <div class="view-tabs" id="views">
+        <div class="tab active" data-view="daily" onclick="setView('daily')">Harian</div>
+        <div class="tab" data-view="weekly" onclick="setView('weekly')">Mingguan</div>
+        <div class="tab" data-view="monthly" onclick="setView('monthly')">Bulanan</div>
+        <div class="tab" data-view="all" onclick="setView('all')">Semua</div>
+      </div>
+
+      <p class="section-title">Daftar Singkat</p>
+      <div class="habit-list" id="list"></div>
+    </aside>
+
+    <section class="board">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h3 id="boardTitle">View: Harian</h3>
+            <div class="meta" id="subTitle">Tanggal: <span id="todayLabel"></span></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="chip" id="score">0 Items</div>
+          </div>
+        </div>
+
+        <div class="day-grid" id="grid"></div>
+
+        <div class="footer">
+          <div>Tip: Gunakan start/end time untuk planning time.</div>
+          <div id="lastSaved">Terakhir disimpan: -</div>
+        </div>
+      </div>
+
+      <div class="panel" id="analytics">
+        <h4>Ringkasan</h4>
+        <p class="small" id="summary">--</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const STORAGE_KEY = "planner_data_v1";
+let state = { items: [] };
+let view = "daily";
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+function load(){ const raw = localStorage.getItem(STORAGE_KEY); if(raw){ try{ state = JSON.parse(raw); }catch(e){ state={items:[]} } } }
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); document.getElementById("lastSaved").innerText = "Terakhir disimpan: " + new Date().toLocaleString(); renderList(); renderBoard(); }
+
+function addItem(){
+  const title = document.getElementById("title").value.trim();
+  if(!title){ alert("Masukkan judul"); return; }
+  const note = document.getElementById("note").value.trim();
+  const recurrence = document.getElementById("recurrence").value;
+  const date = document.getElementById("date").value || null;
+  const start = document.getElementById("startTime").value || null;
+  const end = document.getElementById("endTime").value || null;
+  const category = document.getElementById("category").value;
+  const item = { id:uid(), title, note, recurrence, date, start, end, category, createdAt:new Date().toISOString(), doneDates:[] };
+  state.items.push(item);
+  document.getElementById("title").value=""; document.getElementById("note").value=""; document.getElementById("date").value=""; document.getElementById("startTime").value=""; document.getElementById("endTime").value="";
+  save();
+}
+
+function toggleDone(itemId, date){
+  const it = state.items.find(i=>i.id===itemId);
+  if(!it) return;
+  const idx = it.doneDates.indexOf(date);
+  if(idx===-1) it.doneDates.push(date); else it.doneDates.splice(idx,1);
+  save();
+}
+
+function setView(v){ view = v; document.querySelectorAll(".tab").forEach(t=> t.classList.toggle("active", t.dataset.view===v)); document.getElementById("boardTitle").innerText = "View: " + (v==="daily"?"Harian":v==="weekly"?"Mingguan":v==="monthly"?"Bulanan":"Semua"); renderBoard(); }
+
+function matchesOnDate(item, dateObj){
+  if(item.recurrence==="daily") return true;
+  if(item.recurrence==="weekly"){ const dow = dateObj.getDay(); const itemDate = item.date ? new Date(item.date) : null; if(!itemDate) return true; return itemDate.getDay()===dow; }
+  if(item.recurrence==="monthly"){ const d = dateObj.getDate(); const itemDate = item.date ? new Date(item.date) : null; if(!itemDate) return true; return itemDate.getDate()===d; }
+  if(item.recurrence==="once"){ if(!item.date) return false; const comp = new Date(item.date); return comp.toDateString()===dateObj.toDateString(); }
+  return false;
+}
+
+function getDatesForView(){
+  const list=[]; const now = new Date();
+  if(view==="daily"){ list.push(new Date(now.getFullYear(), now.getMonth(), now.getDate())); }
+  else if(view==="weekly"){ const day = now.getDay()||7; const monday = new Date(now); monday.setDate(now.getDate() - (day-1)); for(let i=0;i<7;i++){ const d = new Date(monday); d.setDate(monday.getDate()+i); list.push(d); } }
+  else if(view==="monthly"){ const year = now.getFullYear(), month=now.getMonth(); const days = new Date(year, month+1,0).getDate(); for(let i=1;i<=days;i++){ list.push(new Date(year, month, i)); } }
+  else{ for(let i=0;i<14;i++){ const d=new Date(now); d.setDate(now.getDate()+i); list.push(d); } }
+  return list;
+}
+
+function renderBoard(){
+  const grid = document.getElementById("grid"); grid.innerHTML=""; const dates = getDatesForView(); document.getElementById("todayLabel").innerText = (new Date()).toLocaleDateString();
+  let count=0;
+  dates.forEach(dateObj=>{
+    const col = document.createElement("div"); col.style.minWidth="220px"; col.style.maxWidth="420px"; col.style.flex="1 1 220px";
+    const header = document.createElement("div"); header.style.marginBottom="8px"; header.innerHTML = "<strong>"+ dateObj.toLocaleDateString() + "</strong><div class='meta'>" + dateObj.toLocaleString('id-ID',{weekday:'long'}) + "</div>";
+    col.appendChild(header);
+    const items = state.items.filter(it=> matchesOnDate(it, dateObj));
+    if(items.length===0){ const empty = document.createElement("div"); empty.className="task"; empty.style.opacity=0.6; empty.innerHTML = "<div style='font-size:13px;color:#999'>Tidak ada jadwal</div>"; col.appendChild(empty); }
+    else {
+      items.forEach(it=>{
+        const task = document.createElement("div"); task.className="task";
+        task.innerHTML = `<div style="flex:1">
+            <div style="font-weight:600">${it.title}</div>
+            <div class="meta">${it.note || ''}</div>
+            <div class="meta">Start ${it.start||'-'} • End ${it.end||'-'} • ${it.category} • ${it.recurrence}</div>
+          </div>`;
+        const dateKey = dateObj.toISOString().slice(0,10);
+        const done = it.doneDates.includes(dateKey);
+        const right = document.createElement("div"); right.style.display="flex"; right.style.flexDirection="column"; right.style.gap="8px"; right.style.alignItems="flex-end";
+        const doneBtn = document.createElement("button"); doneBtn.className="btn"; doneBtn.style.padding="8px"; doneBtn.style.background = done ? "var(--success)" : "var(--muted)"; doneBtn.innerText = done ? "Selesai" : "Tandai"; doneBtn.onclick = ()=> toggleDone(it.id, dateKey);
+        const del = document.createElement("button"); del.className="btn ghost"; del.style.padding="6px"; del.innerText="Hapus"; del.onclick = ()=> { if(confirm('Hapus item?')){ state.items = state.items.filter(x=>x.id!==it.id); save(); } };
+        right.appendChild(doneBtn); right.appendChild(del); task.appendChild(right); col.appendChild(task);
+      });
+    }
+    grid.appendChild(col);
+    count += items.length;
+  });
+  document.getElementById("score").innerText = (state.items.length) + " Items";
+  document.getElementById("analytics").querySelector("#summary").innerText = `Total items: ${state.items.length} • View shows ${count} occurrences`;
+}
+
+function renderList(){
+  const list = document.getElementById("list"); list.innerHTML="";
+  state.items.slice().reverse().forEach(it=>{
+    const el = document.createElement("div"); el.className="habit";
+    el.innerHTML = `<div>
+      <div style="font-weight:700">${it.title}</div>
+      <div class="freq">${it.recurrence} • ${it.category} ${it.date? "• "+it.date:""}</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn ghost" onclick='editItem("${it.id}")'>Edit</button>
+      <button class="btn" onclick='deleteItem("${it.id}")'>Hapus</button>
+    </div>`;
+    list.appendChild(el);
+  });
+}
+
+function editItem(id){
+  const it = state.items.find(x=>x.id===id);
+  if(!it) return;
+  document.getElementById("title").value = it.title;
+  document.getElementById("note").value = it.note;
+  document.getElementById("recurrence").value = it.recurrence;
+  document.getElementById("date").value = it.date || "";
+  document.getElementById("startTime").value = it.start || "";
+  document.getElementById("endTime").value = it.end || "";
+  document.getElementById("category").value = it.category;
+  state.items = state.items.filter(x=>x.id!==id);
+  save();
+}
+
+function deleteItem(id){ if(!confirm("Yakin ingin menghapus?")) return; state.items = state.items.filter(x=>x.id!==id); save(); }
+function exportData(){ const dataStr = JSON.stringify(state, null, 2); const blob = new Blob([dataStr], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "planner_data.json"; document.body.appendChild(a); a.click(); a.remove(); }
+function importData(){ const inp = document.createElement("input"); inp.type="file"; inp.accept="application/json"; inp.onchange = e=>{ const file = e.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = ev=>{ try{ const parsed = JSON.parse(ev.target.result); if(parsed && parsed.items){ state = parsed; save(); alert("Data berhasil diimport"); } else alert("Format file tidak valid"); }catch(err){ alert("Gagal membaca file") } }; reader.readAsText(file); }; inp.click(); }
+function clearAll(){ if(!confirm("Reset semua data?")) return; state = {items:[]}; save(); }
+
+load(); save(); setView('daily');
+</script>
+</body>
+</html>
